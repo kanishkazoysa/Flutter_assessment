@@ -1,7 +1,7 @@
 name: product_catalogue
-description: "A new Flutter project."
+description: "A Flutter product catalogue application with search, favourites, and theme switching."
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0
 
 environment:
   sdk: ^3.9.2
@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_riverpod: ^2.6.1
+  http: ^1.4.0
+  shared_preferences: ^2.5.3
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
