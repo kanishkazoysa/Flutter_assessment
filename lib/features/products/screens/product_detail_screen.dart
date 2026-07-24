@@ -10,7 +10,7 @@ import '../models/product.dart';
 ///
 /// Shows a hero-animated image, product name, price, category,
 /// full description, rating information, and a favourite toggle.
-class ProductDetailScreen extends ConsumerWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final Product product;
 
   const ProductDetailScreen({
@@ -19,77 +19,153 @@ class ProductDetailScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  int _selectedImageIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
     final theme = Theme.of(context);
     final favourites = ref.watch(favouritesProvider);
     final isFavourite = favourites.contains(product.id);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // ── Collapsing App Bar with Product Image ──────────────────
+          // ── Image Section with Overlay Icons ─────────────────────────
           SliverAppBar(
-            expandedHeight: 320,
+            expandedHeight: 410,
             pinned: true,
             stretch: true,
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             leading: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: CircleAvatar(
-                backgroundColor:
-                    theme.colorScheme.surface.withValues(alpha: 0.85),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    color: theme.colorScheme.onSurface,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.5)
+                        : Colors.white.withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  onPressed: () => Navigator.of(context).pop(),
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    color: isDark ? Colors.white : Colors.black87,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
             actions: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CircleAvatar(
-                  backgroundColor:
-                      theme.colorScheme.surface.withValues(alpha: 0.85),
-                  child: IconButton(
-                    icon: Icon(
-                      isFavourite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      color: isFavourite
-                          ? AppTheme.favouriteActiveColor
-                          : theme.colorScheme.onSurface,
-                    ),
-                    onPressed: () {
-                      ref
-                          .read(favouritesProvider.notifier)
-                          .toggleFavourite(product.id);
-                    },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.5)
+                        : Colors.white.withValues(alpha: 0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.share_outlined,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    size: 20,
                   ),
                 ),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Hero(
-                tag: 'product-image-${product.id}',
-                child: Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(40, 80, 40, 40),
-                  child: CachedNetworkImage(
-                    imageUrl: product.image,
-                    fit: BoxFit.contain,
-                    placeholder: (context, url) => const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    errorWidget: (context, url, error) => const Center(
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        size: 64,
-                        color: Colors.grey,
+              background: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(20, 70, 20, 24),
+                child: Column(
+                  children: [
+                    // Main Product Image
+                    Expanded(
+                      child: Hero(
+                        tag: 'product-image-${product.id}',
+                        child: CachedNetworkImage(
+                          imageUrl: product.image,
+                          fit: BoxFit.contain,
+                          placeholder: (context, url) => Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Center(
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    // 5 Product Thumbnail Cards Row
+                    SizedBox(
+                      height: 54,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          5,
+                          (index) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedImageIndex = index;
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 54,
+                              height: 54,
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF6F6F6),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _selectedImageIndex == index
+                                      ? (isDark ? Colors.white : Colors.black)
+                                      : Colors.transparent,
+                                  width: _selectedImageIndex == index ? 1.5 : 0,
+                                ),
+                              ),
+                              child: CachedNetworkImage(
+                                imageUrl: product.image,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -97,160 +173,225 @@ class ProductDetailScreen extends ConsumerWidget {
 
           // ── Product Details ────────────────────────────────────────
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Category chip
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      product.category.toUpperCase(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              transform: Matrix4.translationValues(0, -20, 0),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Product title
-                  Text(
-                    product.title,
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Price and rating row
-                  Row(
-                    children: [
-                      Text(
-                        '\$${product.price.toStringAsFixed(2)}',
-                        style: theme.textTheme.headlineLarge?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF2A2A2A)
+                            : const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        product.category.toUpperCase(),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.65),
                         ),
                       ),
-                      const Spacer(),
-                      _buildRatingChip(context),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  Divider(
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.12),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Description header
-                  Text(
-                    'Description',
-                    style: theme.textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Full description
-                  Text(
-                    product.description,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                      height: 1.6,
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 14),
+
+                    // Product title
+                    Text(
+                      product.title,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Price and rating row
+                    Row(
+                      children: [
+                        Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const Spacer(),
+                        _buildRatingBadge(context),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Divider
+                    Container(
+                      height: 1,
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Description header
+                    Text(
+                      'Description',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Full description
+                    Text(
+                      product.description,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.65),
+                        height: 1.7,
+                      ),
+                    ),
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
 
-      // ── Favourite FAB ─────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ref
-              .read(favouritesProvider.notifier)
-              .toggleFavourite(product.id);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavourite
-                    ? '${product.title} removed from favourites'
-                    : '${product.title} added to favourites',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      // ── Bottom Action Bar ─────────────────────────────────────────
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // Left small square button: Add to Cart (UI element)
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.15),
+                ),
+                borderRadius: BorderRadius.circular(14),
               ),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                size: 22,
               ),
             ),
-          );
-        },
-        icon: Icon(
-          isFavourite
-              ? Icons.favorite_rounded
-              : Icons.favorite_border_rounded,
+            const SizedBox(width: 14),
+            // Main button: Toggle Favourites
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  ref
+                      .read(favouritesProvider.notifier)
+                      .toggleFavourite(product.id);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isFavourite
+                            ? 'Removed from favourites'
+                            : 'Added to favourites',
+                      ),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white : Colors.black,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isFavourite ? 'Added to Favourites' : 'Add to Favourites',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: isDark ? Colors.black : Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isFavourite) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.star_rounded,
+                          color: AppTheme.favouriteActiveColor,
+                          size: 20,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        label: Text(
-          isFavourite ? 'Remove Favourite' : 'Add to Favourites',
-        ),
-        backgroundColor: isFavourite
-            ? AppTheme.favouriteActiveColor
-            : theme.colorScheme.primaryContainer,
-        foregroundColor: isFavourite
-            ? Colors.white
-            : theme.colorScheme.onPrimaryContainer,
       ),
     );
   }
 
-  /// Builds the rating indicator chip.
-  Widget _buildRatingChip(BuildContext context) {
+  /// Builds the rating badge widget.
+  Widget _buildRatingBadge(BuildContext context) {
     final theme = Theme.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
+        color: Colors.amber.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.amber.shade200),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.star_rounded,
-            size: 18,
+            size: 16,
             color: Colors.amber.shade700,
           ),
           const SizedBox(width: 4),
           Text(
-            '${product.rating.rate}',
-            style: theme.textTheme.labelLarge?.copyWith(
+            '${widget.product.rating.rate}',
+            style: theme.textTheme.bodySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.amber.shade900,
+              color: Colors.amber.shade800,
             ),
           ),
           const SizedBox(width: 4),
           Text(
-            '(${product.rating.count})',
+            '(${widget.product.rating.count})',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.amber.shade800,
+              color: Colors.amber.shade700.withValues(alpha: 0.7),
+              fontSize: 11,
             ),
           ),
         ],
