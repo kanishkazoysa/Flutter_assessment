@@ -8,8 +8,10 @@ import '../models/product.dart';
 
 /// A card widget that displays a product's summary information.
 ///
-/// Shows the product image, name, price, category, and a favourite toggle button.
-/// Tapping the card navigates to the product detail screen.
+/// Designed to match a clean, modern e-commerce card layout with:
+/// - Rounded product image with white background
+/// - Favourite heart icon overlay (top-right)
+/// - Product name, price, and rating below the image
 class ProductCard extends ConsumerWidget {
   final Product product;
   final VoidCallback onTap;
@@ -25,152 +27,157 @@ class ProductCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final favourites = ref.watch(favouritesProvider);
     final isFavourite = favourites.contains(product.id);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Product Image ─────────────────────────────────────────
-            Expanded(
-              flex: 3,
-              child: Stack(
-                fit: StackFit.expand,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Product Image Container (fixed height) ─────────────────
+          SizedBox(
+            height: 200,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Image with rounded corners
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF0F0F0),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Hero(
+                            tag: 'product-image-${product.id}',
+                            child: Container(
+                              color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF0F0F0),
+                              padding: const EdgeInsets.all(20),
+                              child: CachedNetworkImage(
+                                imageUrl: product.image,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Icon(
+                                  Icons.broken_image_rounded,
+                                  size: 40,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // ── Top-Right Corner Favourite Badge ───
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              ref
+                                  .read(favouritesProvider.notifier)
+                                  .toggleFavourite(product.id);
+                            },
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(16),
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  isFavourite
+                                      ? Icons.star_rounded
+                                      : Icons.star_border_rounded,
+                                  size: 20,
+                                  color: isFavourite
+                                      ? AppTheme.favouriteActiveColor
+                                      : Colors.grey.shade400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Product Info (fixed height for consistency) ────────────
+          SizedBox(
+            height: 78,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Hero(
-                    tag: 'product-image-${product.id}',
-                    child: Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(16),
-                      child: CachedNetworkImage(
-                        imageUrl: product.image,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (context, url, error) => const Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 40,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
+                  // Product name
+                  Text(
+                    product.title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Price
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  // ── Favourite Button ──────────────────────────────────
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Material(
-                      color: theme.colorScheme.surface.withValues(alpha: 0.85),
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        onTap: () {
-                          ref
-                              .read(favouritesProvider.notifier)
-                              .toggleFavourite(product.id);
-                        },
-                        customBorder: const CircleBorder(),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Icon(
-                            isFavourite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 20,
-                            color: isFavourite
-                                ? AppTheme.favouriteActiveColor
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                          ),
-                        ),
+                  const SizedBox(height: 4),
+                  // Rating row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: Colors.amber.shade700,
                       ),
-                    ),
-                  ),
-                  // ── Category Badge ────────────────────────────────────
-                  Positioned(
-                    top: 6,
-                    left: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        product.category,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
+                      const SizedBox(width: 3),
+                      Text(
+                        '${product.rating.rate}',
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(${product.rating.count})',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            // ── Product Info ──────────────────────────────────────────
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Product name
-                    Text(
-                      product.title,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    // Price and rating row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star_rounded,
-                              size: 16,
-                              color: Colors.amber.shade700,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              product.rating.rate.toStringAsFixed(1),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
