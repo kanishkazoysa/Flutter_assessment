@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Application theme configuration for light and dark modes.
 ///
@@ -10,12 +11,12 @@ class AppTheme {
 
   static const Color _primaryLight = Color(0xFF0D6E6E);
   static const Color _primaryDark = Color(0xFF4ECDC4);
-  static const Color _surfaceLight = Color(0xFFF8F9FA);
+  static const Color _surfaceLight = Colors.white;
   static const Color _surfaceDark = Color(0xFF121212);
   static const Color _cardLight = Colors.white;
   static const Color _cardDark = Color(0xFF1E1E1E);
   static const Color _errorColor = Color(0xFFE74C3C);
-  static const Color _favouriteColor = Color(0xFFE74C3C);
+  static const Color _favouriteColor = Color(0xFF00897B);
 
   /// Colour used for the favourite icon when active.
   static const Color favouriteActiveColor = _favouriteColor;
@@ -45,6 +46,11 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -127,6 +133,11 @@ class AppTheme {
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
