@@ -391,7 +391,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           Positioned(
             left: 20,
             right: 20,
-            bottom: 32,
+            bottom: 15,
             child: Container(
               height: 54,
               decoration: BoxDecoration(
