@@ -15,6 +15,24 @@ This application displays a product catalogue loaded from a remote API and lets 
 
 The app also includes loading, error, retry, and empty states for a more complete user experience.
 
+## Screenshots
+
+### Home Light
+
+![Home Light](assets/images/Screenshot-home-light.png)
+
+### Home Dark
+
+![Home Dark](assets/images/Screenshot-home-dark.png)
+
+### Product Details Light
+
+![Product Details Light](assets/images/Screenshot-product-details-light.png)
+
+### Product Details Dark
+
+![Product Details Dark](assets/images/Screenshot-product-details-dark.png)
+
 ## Setup Instructions
 
 ### Prerequisites

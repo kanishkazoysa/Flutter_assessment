@@ -111,7 +111,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                   color: isDark
                                       ? const Color(0xFF2A2A2A)
                                       : const Color(0xFFF2F2F2),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
                                     color: isDark
                                         ? Colors.white.withValues(alpha: 0.08)
@@ -120,7 +120,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                   ),
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(24),
                                   child: TextField(
                                     controller: _searchController,
                                     onChanged: (value) {
@@ -187,7 +187,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                 height: 42,
                                 decoration: BoxDecoration(
                                   color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(16),
+                                  shape: BoxShape.circle,
                                   border: Border.all(
                                     color: theme.colorScheme.onSurface
                                         .withValues(alpha: 0.08),
@@ -384,13 +384,20 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
             child: Container(
               height: 54,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                color: isDark ? const Color(0xFF262626) : Colors.white,
                 borderRadius: BorderRadius.circular(27),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.04),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.28)
+                        : Colors.black.withValues(alpha: 0.12),
+                    blurRadius: isDark ? 24 : 20,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -418,8 +425,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   IconButton(
                     icon: Icon(
                       _selectedNavIndex == 1
-                          ? Icons.format_list_bulleted_rounded
-                          : Icons.format_list_bulleted_rounded,
+                          ? Icons.dashboard_rounded
+                          : Icons.dashboard_outlined,
                       color: _selectedNavIndex == 1
                           ? (isDark ? Colors.white : Colors.black)
                           : Colors.grey.shade400,
@@ -431,12 +438,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       });
                     },
                   ),
-                  // 3. Location / Map
+                  // 3. Cart
                   IconButton(
                     icon: Icon(
                       _selectedNavIndex == 2
-                          ? Icons.location_on_rounded
-                          : Icons.location_on_outlined,
+                          ? Icons.shopping_bag_rounded
+                          : Icons.shopping_bag_outlined,
                       color: _selectedNavIndex == 2
                           ? (isDark ? Colors.white : Colors.black)
                           : Colors.grey.shade400,
@@ -448,12 +455,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       });
                     },
                   ),
-                  // 4. Notifications
+                  // 4. Favourites
                   IconButton(
                     icon: Icon(
                       _selectedNavIndex == 3
-                          ? Icons.notifications_rounded
-                          : Icons.notifications_none_rounded,
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                       color: _selectedNavIndex == 3
                           ? (isDark ? Colors.white : Colors.black)
                           : Colors.grey.shade400,
