@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,11 +31,44 @@ class ProductListScreen extends ConsumerStatefulWidget {
 
 class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  late final PageController _promoPageController;
+  static const int _promoInitialPage = 1;
   int _selectedNavIndex = 0;
+
+  static const List<_PromoSlide> _promoSlides = [
+    _PromoSlide(
+      image: 'assets/images/promo_banner_2.png',
+      title: 'New arrivals added to the catalogue every week',
+      subtitle: 'Check out the latest styles',
+    ),
+    _PromoSlide(
+      image: 'assets/images/promo_banner_3.png',
+      title: 'Free shipping on your first order today',
+      subtitle: 'Limited time offer',
+    ),
+    _PromoSlide(
+      image: 'assets/images/promo_banner.png',
+      title: 'Discount up to 45% on every dress rental for events',
+      subtitle: 'Only for this week',
+    ),
+  ];
+
+  Timer? _promoTimer;
+  int _promoPage = 0;
+  int _promoViewPage = _promoInitialPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _promoPageController = PageController(initialPage: _promoInitialPage);
+    _startPromoAutoScroll();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _promoTimer?.cancel();
+    _promoPageController.dispose();
     super.dispose();
   }
 
@@ -77,13 +112,23 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                       ? const Color(0xFF2A2A2A)
                                       : const Color(0xFFF2F2F2),
                                   borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.black.withValues(alpha: 0.08),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(14),
                                   child: TextField(
                                     controller: _searchController,
                                     onChanged: (value) {
-                                      ref.read(searchQueryProvider.notifier).state =
+                                      ref
+                                              .read(
+                                                searchQueryProvider.notifier,
+                                              )
+                                              .state =
                                           value;
                                     },
                                     style: theme.textTheme.bodyMedium,
@@ -105,8 +150,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                               onTap: () {
                                                 _searchController.clear();
                                                 ref
-                                                    .read(searchQueryProvider.notifier)
-                                                    .state = '';
+                                                        .read(
+                                                          searchQueryProvider
+                                                              .notifier,
+                                                        )
+                                                        .state =
+                                                    '';
                                               },
                                               child: Icon(
                                                 Icons.close_rounded,
@@ -119,7 +168,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                       enabledBorder: InputBorder.none,
                                       focusedBorder: InputBorder.none,
                                       contentPadding:
-                                          const EdgeInsets.symmetric(vertical: 14),
+                                          const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -138,7 +189,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                   color: Colors.transparent,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.08),
                                     width: 1,
                                   ),
                                 ),
@@ -175,7 +227,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                             height: 40,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               itemCount: categories.length + 1, // +1 for "All"
                               itemBuilder: (context, index) {
                                 if (index == 0) {
@@ -185,8 +239,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                     isSelected: selectedCategory == null,
                                     onTap: () {
                                       ref
-                                          .read(selectedCategoryProvider.notifier)
-                                          .state = null;
+                                              .read(
+                                                selectedCategoryProvider
+                                                    .notifier,
+                                              )
+                                              .state =
+                                          null;
                                     },
                                   );
                                 }
@@ -199,8 +257,8 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                                     ref
                                         .read(selectedCategoryProvider.notifier)
                                         .state = selectedCategory == category
-                                            ? null
-                                            : category;
+                                        ? null
+                                        : category;
                                   },
                                 );
                               },
@@ -231,8 +289,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.15),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.15,
+                                  ),
                                 ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -270,13 +329,13 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                           title: searchQuery.isNotEmpty
                               ? 'No results for "$searchQuery"'
                               : selectedCategory != null
-                                  ? 'No products in this category'
-                                  : 'No products available',
+                              ? 'No products in this category'
+                              : 'No products available',
                           subtitle: searchQuery.isNotEmpty
                               ? 'Try a different search term.'
                               : selectedCategory != null
-                                  ? 'Try selecting a different category.'
-                                  : 'Check back later for new products.',
+                              ? 'Try selecting a different category.'
+                              : 'Check back later for new products.',
                           icon: searchQuery.isNotEmpty
                               ? Icons.search_off_rounded
                               : Icons.inventory_2_outlined,
@@ -284,26 +343,31 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       )
                     else
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 90), // Bottom padding so items scroll behind floating bar
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          90,
+                        ), // Bottom padding so items scroll behind floating bar
                         sliver: SliverGrid(
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisExtent: 280,
-                            crossAxisSpacing: 14,
-                            mainAxisSpacing: 18,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final product = products[index];
-                              return ProductCard(
-                                product: product,
-                                onTap: () =>
-                                    _navigateToDetail(context, product),
-                              );
-                            },
-                            childCount: products.length,
-                          ),
+                                crossAxisCount: 2,
+                                mainAxisExtent: 294,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 18,
+                              ),
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final product = products[index];
+                            return ProductCard(
+                              product: product,
+                              index: index,
+                              onTap: () => _navigateToDetail(context, product),
+                            );
+                          }, childCount: products.length),
                         ),
                       ),
                   ],
@@ -336,7 +400,9 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                   // 1. Home
                   IconButton(
                     icon: Icon(
-                      _selectedNavIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
+                      _selectedNavIndex == 0
+                          ? Icons.home_rounded
+                          : Icons.home_outlined,
                       color: _selectedNavIndex == 0
                           ? (isDark ? Colors.white : Colors.black)
                           : Colors.grey.shade400,
@@ -425,7 +491,58 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
     );
   }
 
-  /// Builds the promotional banner card matching the requested dress rental design.
+  void _startPromoAutoScroll() {
+    _promoTimer?.cancel();
+    _promoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_promoPageController.hasClients) return;
+      _promoPageController.animateToPage(
+        _promoViewPage + 1,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  int _getPromoSlideIndex(int pageIndex) {
+    if (pageIndex == 0) {
+      return _promoSlides.length - 1;
+    }
+    if (pageIndex == _promoSlides.length + 1) {
+      return 0;
+    }
+    return pageIndex - 1;
+  }
+
+  void _handlePromoPageChanged(int pageIndex) {
+    final logicalIndex = _getPromoSlideIndex(pageIndex);
+
+    setState(() {
+      _promoViewPage = pageIndex;
+      _promoPage = logicalIndex;
+    });
+
+    if (pageIndex == 0) {
+      Future.microtask(() {
+        if (!mounted || !_promoPageController.hasClients) return;
+        _promoPageController.jumpToPage(_promoSlides.length);
+        setState(() {
+          _promoViewPage = _promoSlides.length;
+        });
+      });
+    } else if (pageIndex == _promoSlides.length + 1) {
+      Future.microtask(() {
+        if (!mounted || !_promoPageController.hasClients) return;
+        _promoPageController.jumpToPage(_promoInitialPage);
+        setState(() {
+          _promoViewPage = _promoInitialPage;
+        });
+      });
+    }
+
+    _startPromoAutoScroll();
+  }
+
+  /// Builds a paged promotional banner that auto-scrolls and stays swipeable.
   Widget _buildPromoBanner(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -444,123 +561,115 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Clean Background Image (No Gradient Overlay)
-            Transform.flip(
-              flipX: true,
-              child: Image.asset(
-                'assets/images/promo_banner.png',
-                fit: BoxFit.cover,
-                alignment: Alignment.centerLeft,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(color: const Color(0xFF042E2B));
-                },
-              ),
-            ),
-            // Soft solid shadow behind text for crisp readability without gradient
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: 220,
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.35),
-              ),
-            ),
-            // Content Text & Button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 220),
-                        child: Text(
-                          'Discount up to 45% on every dress rental for events',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Only for this week',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+        child: PageView.builder(
+          controller: _promoPageController,
+          itemCount: _promoSlides.length + 2,
+          onPageChanged: _handlePromoPageChanged,
+          itemBuilder: (context, index) {
+            final slide = _promoSlides[_getPromoSlideIndex(index)];
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                Transform.flip(
+                  flipX: true,
+                  child: Image.asset(
+                    slide.image,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.centerLeft,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(color: const Color(0xFF042E2B));
+                    },
                   ),
-                  // Bottom Row: "Buy Now" Button + Carousel Dots (Bottom Right)
-                  Row(
+                ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 220,
+                  child: Container(color: Colors.black.withValues(alpha: 0.35)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Text(
-                          'Buy Now',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 220),
+                            child: Text(
+                              slide.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.2,
+                                fontSize: 15,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            slide.subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
-                      // Carousel Indicator Dots (Bottom Right)
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Container(
-                            width: 14,
-                            height: 4,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Text(
+                              'Buy Now',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
+                          Row(
+                            children: List.generate(_promoSlides.length, (
+                              dotIndex,
+                            ) {
+                              final isActive = dotIndex == _promoPage;
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  width: isActive ? 14 : 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              );
+                            }),
                           ),
                         ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -615,10 +724,11 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   String _capitalizeCategory(String category) {
     return category
         .split(' ')
-        .map((word) =>
-            word.isNotEmpty
-                ? '${word[0].toUpperCase()}${word.substring(1)}'
-                : word)
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : word,
+        )
         .join(' ');
   }
 
@@ -639,7 +749,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
           );
 
           return FadeTransition(
-            opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curveAnimation),
+            opacity: Tween<double>(
+              begin: 0.0,
+              end: 1.0,
+            ).animate(curveAnimation),
             child: SlideTransition(
               position: Tween<Offset>(
                 begin: const Offset(0.0, 0.06),
@@ -652,4 +765,17 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       ),
     );
   }
+}
+
+/// Data for a single slide in the promotional banner carousel.
+class _PromoSlide {
+  final String image;
+  final String title;
+  final String subtitle;
+
+  const _PromoSlide({
+    required this.image,
+    required this.title,
+    required this.subtitle,
+  });
 }
