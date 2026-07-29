@@ -31,8 +31,6 @@ class ProductListScreen extends ConsumerStatefulWidget {
 
 class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late final PageController _promoPageController;
-  static const int _promoInitialPage = 1;
   int _selectedNavIndex = 0;
 
   static const List<_PromoSlide> _promoSlides = [
@@ -55,12 +53,10 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 
   Timer? _promoTimer;
   int _promoPage = 0;
-  int _promoViewPage = _promoInitialPage;
 
   @override
   void initState() {
     super.initState();
-    _promoPageController = PageController(initialPage: _promoInitialPage);
     _startPromoAutoScroll();
   }
 
@@ -68,7 +64,6 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   void dispose() {
     _searchController.dispose();
     _promoTimer?.cancel();
-    _promoPageController.dispose();
     super.dispose();
   }
 
@@ -501,57 +496,17 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   void _startPromoAutoScroll() {
     _promoTimer?.cancel();
     _promoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted || !_promoPageController.hasClients) return;
-      _promoPageController.animateToPage(
-        _promoViewPage + 1,
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
+      if (!mounted) return;
+      setState(() {
+        _promoPage = (_promoPage + 1) % _promoSlides.length;
+      });
     });
   }
 
-  int _getPromoSlideIndex(int pageIndex) {
-    if (pageIndex == 0) {
-      return _promoSlides.length - 1;
-    }
-    if (pageIndex == _promoSlides.length + 1) {
-      return 0;
-    }
-    return pageIndex - 1;
-  }
-
-  void _handlePromoPageChanged(int pageIndex) {
-    final logicalIndex = _getPromoSlideIndex(pageIndex);
-
-    setState(() {
-      _promoViewPage = pageIndex;
-      _promoPage = logicalIndex;
-    });
-
-    if (pageIndex == 0) {
-      Future.microtask(() {
-        if (!mounted || !_promoPageController.hasClients) return;
-        _promoPageController.jumpToPage(_promoSlides.length);
-        setState(() {
-          _promoViewPage = _promoSlides.length;
-        });
-      });
-    } else if (pageIndex == _promoSlides.length + 1) {
-      Future.microtask(() {
-        if (!mounted || !_promoPageController.hasClients) return;
-        _promoPageController.jumpToPage(_promoInitialPage);
-        setState(() {
-          _promoViewPage = _promoInitialPage;
-        });
-      });
-    }
-
-    _startPromoAutoScroll();
-  }
-
-  /// Builds a paged promotional banner that auto-scrolls and stays swipeable.
+  /// Builds a single promotional banner whose image and content animate in-place.
   Widget _buildPromoBanner(BuildContext context) {
     final theme = Theme.of(context);
+    final slide = _promoSlides[_promoPage];
 
     return Container(
       height: 155,
@@ -568,115 +523,166 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: PageView.builder(
-          controller: _promoPageController,
-          itemCount: _promoSlides.length + 2,
-          onPageChanged: _handlePromoPageChanged,
-          itemBuilder: (context, index) {
-            final slide = _promoSlides[_getPromoSlideIndex(index)];
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Transform.flip(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 1100),
+              switchInCurve: Curves.easeInOutCubic,
+              switchOutCurve: Curves.easeInOutCubic,
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                );
+              },
+              transitionBuilder: (child, animation) {
+                final curved = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOutCubic,
+                  reverseCurve: Curves.easeInOutCubic,
+                );
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.04, 0),
+                    end: Offset.zero,
+                  ).animate(curved),
+                  child: FadeTransition(opacity: curved, child: child),
+                );
+              },
+              child: SizedBox.expand(
+                key: ValueKey(slide.image),
+                child: Transform.flip(
                   flipX: true,
                   child: Image.asset(
                     slide.image,
                     fit: BoxFit.cover,
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(color: const Color(0xFF042E2B));
                     },
                   ),
                 ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: 220,
-                  child: Container(color: Colors.black.withValues(alpha: 0.35)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 220,
+              child: Container(color: Colors.black.withValues(alpha: 0.35)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 950),
+                    switchInCurve: Curves.easeInOutCubic,
+                    switchOutCurve: Curves.easeInOutCubic,
+                    layoutBuilder: (currentChild, previousChildren) {
+                      return Stack(
                         children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 220),
-                            child: Text(
-                              slide.title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                height: 1.2,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            slide.subtitle,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontSize: 11,
-                            ),
-                          ),
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
                         ],
+                      );
+                    },
+                    transitionBuilder: (child, animation) {
+                      final curved = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeInOutCubic,
+                        reverseCurve: Curves.easeInOutCubic,
+                      );
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.025, 0),
+                          end: Offset.zero,
+                        ).animate(curved),
+                        child: FadeTransition(opacity: curved, child: child),
+                      );
+                    },
+                    child: Column(
+                      key: ValueKey(slide.title),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 220),
+                          child: Text(
+                            slide.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          slide.subtitle,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Text(
+                          'Buy Now',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              'Buy Now',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                        children: List.generate(_promoSlides.length, (
+                          dotIndex,
+                        ) {
+                          final isActive = dotIndex == _promoPage;
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              width: isActive ? 14 : 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? Colors.white
+                                    : Colors.white.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                          ),
-                          Row(
-                            children: List.generate(_promoSlides.length, (
-                              dotIndex,
-                            ) {
-                              final isActive = dotIndex == _promoPage;
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 250),
-                                  width: isActive ? 14 : 4,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: isActive
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ],
+                          );
+                        }),
                       ),
                     ],
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
