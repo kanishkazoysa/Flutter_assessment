@@ -17,21 +17,28 @@ The app also includes loading, error, retry, and empty states for a more complet
 
 ## Screenshots
 
-### Home Light
-
-![Home Light](assets/images/Screenshot-home-light.png)
-
-### Home Dark
-
-![Home Dark](assets/images/Screenshot-home-dark.png)
-
-### Product Details Light
-
-![Product Details Light](assets/images/Screenshot-product-details-light.png)
-
-### Product Details Dark
-
-![Product Details Dark](assets/images/Screenshot-product-details-dark.png)
+<table>
+  <tr>
+    <td align="center">
+      <strong>Home Light</strong><br/>
+      <img src="assets/images/Screenshot-home-light.png" alt="Home Light" width="260"/>
+    </td>
+    <td align="center">
+      <strong>Home Dark</strong><br/>
+      <img src="assets/images/Screenshot-home-dark.png" alt="Home Dark" width="260"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Product Details Light</strong><br/>
+      <img src="assets/images/Screenshot-product-details-light.png" alt="Product Details Light" width="260"/>
+    </td>
+    <td align="center">
+      <strong>Product Details Dark</strong><br/>
+      <img src="assets/images/Screenshot-product-details-dark.png" alt="Product Details Dark" width="260"/>
+    </td>
+  </tr>
+</table>
 
 ## Setup Instructions
 
@@ -136,13 +143,3 @@ The app uses `flutter_riverpod`.
 - Light and dark themes: implemented
 - Loading, error, retry, and empty states: implemented
 
-## Submission Notes
-
-Before final submission, make sure to include:
-
-- repository link
-- APK file
-- demo video
-- screenshots or screen recording
-
-The repository should keep the real commit history intact.
